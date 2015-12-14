@@ -1,0 +1,37 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "Pebble Technology",
+    "longName": "Lista Now for Pebble",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/app_icon.png",
+                "menuIcon": true,
+                "name": "app_icon",
+                "type": "png"
+            },
+            {
+                "file": "images/menu_icon_checked.png",
+                "name": "MENU_CHECKED_ITEM",
+                "type": "png"
+            },
+            {
+                "file": "images/menu_icon_unchecked.png",
+                "name": "MENU_UNCHECKED_ITEM",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "2",
+    "shortName": "ListaNow",
+    "uuid": "32c4c5dc-e0ad-4b48-9703-b00fa65d9efa",
+    "versionCode": 1,
+    "versionLabel": "2.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
