@@ -1,4 +1,5 @@
 #include "pebble.h"
+#include "util.h"
 
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ICONS 2
@@ -10,6 +11,17 @@
   
 #define STORAGE_ITEMS 20
 #define STORAGE_ITEM_COUNT 0
+
+// Pebble KEY
+#define KEY_RESULT        1
+
+// Location API
+#define KEY_LIST        100
+
+#define MAX_TEXT_SIZE       128
+
+static const uint32_t INBOUND_SIZE	=	128; // Inbound app message size
+static const uint32_t OUTBOUND_SIZE	=	128; // Outbound app message size
 
 static Window *s_main_window;
 static MenuLayer *s_menu_layer;
@@ -37,6 +49,8 @@ add_item(char *name, char *description)
     num_items++;    
   }
 }
+
+char list_text[MAX_TEXT_SIZE];
 
 // END OF ListItem --------------------------------------------
 
@@ -71,6 +85,92 @@ void save_data() {
 
 
 // END of STORAGE --------------------------
+
+// START of Receiver ------------------------
+
+static void received_handler(DictionaryIterator *iter, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "ENTORU NO RECEIVED HANDLER ----");
+  Tuple *result_tuple = dict_find(iter, KEY_RESULT);
+  if(result_tuple) {
+    // Display result to player
+    //ui_show_weapon_selector(false);
+
+    // Remember how many games have been played
+    //s_game_counter++;
+    int item = result_tuple->value->int32;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "item: %d", item);
+      
+    strcpy(list_text, "lat : ");
+    strcat(list_text, dict_find(iter, KEY_LIST)->value->cstring);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "List String: %s", list_text);
+    
+
+    // Display for 5 seconds
+    //app_timer_register(5000, timer_handler, NULL);
+
+    // Go back to low-power mode
+    app_comm_set_sniff_interval(SNIFF_INTERVAL_NORMAL);
+  }
+}
+
+/**
+ * Failed to receive message
+ */
+static void dropped_handler(AppMessageResult reason, void *context) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Message dropped: %s", (char*)reason);
+}
+
+
+// END of Receiver ------------------------
+
+char** str_split(char* a_str, const char a_delim)
+{
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+            //assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        //assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    return result;
+}
+
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
   return NUM_MENU_SECTIONS;
@@ -178,6 +278,13 @@ static void init() {
     .unload = main_window_unload,
   });
   window_stack_push(s_main_window, true);
+  
+  // Init app message and message handlers
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Initializing handlers");
+  app_message_register_inbox_received(received_handler);
+  app_message_register_inbox_dropped(dropped_handler);
+  app_message_open(INBOUND_SIZE, OUTBOUND_SIZE);
+//  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 static void deinit() {
@@ -191,16 +298,15 @@ int main(void) {
   add_item("Milk", "6 units");
   add_item("Ham", "6 units");
   add_item("Krokitos", "2 caixas");
-  add_item("Cake", "1 unit");
-  add_item("Tomatoes", "1 pacote");
-  add_item("Sabao em po", "1 unit");
-  add_item("Sabao em pedra", "1 unit");
-  add_item("Cloro", "1 unit");
-  add_item("Desinfetante", "1 unit");
-  add_item("Bucha", "1 unit");
-  add_item("Lustra Moveis", "1 unit");
-  
-  
+//   add_item("Cake", "1 unit");
+//   add_item("Tomatoes", "1 pacote");
+//   add_item("Sabao em po", "1 unit");
+//   add_item("Sabao em pedra", "1 unit");
+//   add_item("Cloro", "1 unit");
+//   add_item("Desinfetante", "1 unit");
+//   add_item("Bucha", "1 unit");
+//   add_item("Lustra Moveis", "1 unit");
+//   add_item("Queijo", "1 unit");
   
   for (int i = 0; i < num_items; i++) {
       APP_LOG(APP_LOG_LEVEL_DEBUG, "Item name: %s and desc: %d", list_items[i].name, list_items[i].is_checked);

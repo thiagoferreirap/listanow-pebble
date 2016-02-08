@@ -4,10 +4,16 @@
         ""
     ],
     "companyName": "Pebble Technology",
+    "enableMultiJS": false,
     "longName": "Lista Now for Pebble",
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/menu_icon_unchecked.png",
+                "name": "MENU_UNCHECKED_ITEM",
+                "type": "png"
+            },
             {
                 "file": "images/app_icon.png",
                 "menuIcon": true,
@@ -18,18 +24,17 @@
                 "file": "images/menu_icon_checked.png",
                 "name": "MENU_CHECKED_ITEM",
                 "type": "png"
-            },
-            {
-                "file": "images/menu_icon_unchecked.png",
-                "name": "MENU_UNCHECKED_ITEM",
-                "type": "png"
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
     "shortName": "ListaNow",
-    "uuid": "32c4c5dc-e0ad-4b48-9703-b00fa65d9efa",
-    "versionCode": 1,
+    "targetPlatforms": [
+        "aplite",
+        "basalt",
+        "chalk"
+    ],
+    "uuid": "a68f3297-d175-4bf6-a306-d4e50714b870",
     "versionLabel": "2.0",
     "watchapp": {
         "watchface": false
