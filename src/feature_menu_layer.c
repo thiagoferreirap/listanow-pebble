@@ -16,7 +16,7 @@
 #define KEY_RESULT        1
 
 // Location API
-#define KEY_LIST        100
+#define KEY_LIST        2
 
 #define MAX_TEXT_SIZE       128
 
@@ -83,45 +83,20 @@ void save_data() {
   
 }
 
+void clear_persist() {
+  num_items = persist_exists(STORAGE_ITEM_COUNT) ? persist_read_int(STORAGE_ITEM_COUNT) : 0;
+  
+  if (num_items > 0) 
+  {
+    for (int i=0; i < num_items; i++)
+    {
+      persist_delete(STORAGE_ITEMS + i);
+    }
+  } 
+
+}
 
 // END of STORAGE --------------------------
-
-// START of Receiver ------------------------
-
-static void received_handler(DictionaryIterator *iter, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "ENTORU NO RECEIVED HANDLER ----");
-  Tuple *result_tuple = dict_find(iter, KEY_RESULT);
-  if(result_tuple) {
-    // Display result to player
-    //ui_show_weapon_selector(false);
-
-    // Remember how many games have been played
-    //s_game_counter++;
-    int item = result_tuple->value->int32;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "item: %d", item);
-      
-    strcpy(list_text, "lat : ");
-    strcat(list_text, dict_find(iter, KEY_LIST)->value->cstring);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "List String: %s", list_text);
-    
-
-    // Display for 5 seconds
-    //app_timer_register(5000, timer_handler, NULL);
-
-    // Go back to low-power mode
-    app_comm_set_sniff_interval(SNIFF_INTERVAL_NORMAL);
-  }
-}
-
-/**
- * Failed to receive message
- */
-static void dropped_handler(AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Message dropped: %s", (char*)reason);
-}
-
-
-// END of Receiver ------------------------
 
 char** str_split(char* a_str, const char a_delim)
 {
@@ -171,6 +146,76 @@ char** str_split(char* a_str, const char a_delim)
     return result;
 }
 
+// START of Receiver ------------------------
+
+static void received_handler(DictionaryIterator *iter, void *context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "ENTORU NO RECEIVED HANDLER ----");
+  clear_persist();
+  num_items = 0;
+  
+  Tuple *result_tuple = dict_find(iter, KEY_RESULT);
+  if(result_tuple) {
+    // Display result to player
+    //ui_show_weapon_selector(false);
+
+    // Remember how many games have been played
+    //s_game_counter++;
+    int item = result_tuple->value->int32;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "item: %d", item);
+      
+    strcpy(list_text, dict_find(iter, KEY_LIST)->value->cstring);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "List String: %s", list_text);
+    
+    //char months[] = "Milk,1 units|Eggs,8 units|Ham,200 oz.|Chesse,6 units";
+    char** tokens;
+    char** comma_tokens;
+  
+    tokens = str_split(list_text, '|');
+  
+    if (tokens)
+    {
+      int i, j;
+      for (i = 0; *(tokens + i); i++)
+      {
+        comma_tokens = str_split(*(tokens + i), ',');
+  
+        if (comma_tokens) 
+        {
+          for (j = 1; *(comma_tokens + j); j++)
+          {
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "Item name: %s and qt: %s",  *(tokens + i), *(comma_tokens + j));
+  //          printf("Item: %s, %s\n", *(tokens + i), *(comma_tokens + j));
+            add_item(*(tokens + i), *(comma_tokens + j));
+            free(*(comma_tokens + j));
+          }    
+        }
+        
+        free(comma_tokens);
+        free(*(tokens + i));
+      }
+      printf("\n");
+      free(tokens);
+    }  
+    
+    
+    // Display for 5 seconds
+    //app_timer_register(5000, timer_handler, NULL);
+
+    menu_layer_reload_data(s_menu_layer);
+    // Go back to low-power mode
+    app_comm_set_sniff_interval(SNIFF_INTERVAL_NORMAL);
+  }
+}
+
+/**
+ * Failed to receive message
+ */
+static void dropped_handler(AppMessageResult reason, void *context) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Message dropped: %s", (char*)reason);
+}
+
+
+// END of Receiver ------------------------
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
   return NUM_MENU_SECTIONS;
@@ -179,7 +224,7 @@ static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data
 static uint16_t menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
   switch (section_index) {
     case 0:
-      return NUM_FIRST_MENU_ITEMS;
+      return num_items;
     default:
       return 0;
   }
@@ -293,24 +338,20 @@ static void deinit() {
 
 int main(void) {
   load_data();
-  add_item("Eggs", "6 units");
-  add_item("Cheese", "6 units");
-  add_item("Milk", "6 units");
-  add_item("Ham", "6 units");
-  add_item("Krokitos", "2 caixas");
-//   add_item("Cake", "1 unit");
-//   add_item("Tomatoes", "1 pacote");
-//   add_item("Sabao em po", "1 unit");
-//   add_item("Sabao em pedra", "1 unit");
-//   add_item("Cloro", "1 unit");
-//   add_item("Desinfetante", "1 unit");
-//   add_item("Bucha", "1 unit");
-//   add_item("Lustra Moveis", "1 unit");
-//   add_item("Queijo", "1 unit");
-  
-  for (int i = 0; i < num_items; i++) {
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Item name: %s and desc: %d", list_items[i].name, list_items[i].is_checked);
+//   add_item("Cheese", "6 units");
+//   add_item("Milk", "6 units");
+//   add_item("Ham", "6 units");
+//   add_item("Krokitos", "2 caixas");
+  if (num_items == 0) {
+    add_item("User your phone", "to add an item");
   }
+  
+  
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "NUM ITEMS: %d",  num_items);
+  
+//   for (int i = 0; i < num_items; i++) {
+//       APP_LOG(APP_LOG_LEVEL_DEBUG, "Item name: %s and desc: %d", list_items[i].name, list_items[i].is_checked);
+//   }
   
   init();
   app_event_loop();
